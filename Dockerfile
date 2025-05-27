@@ -1,4 +1,4 @@
-ARG IMAGE_TAG=aarch64-musl
+ARG IMAGE_TAG=x86_64-musl
 FROM ghcr.io/rust-cross/rust-musl-cross:${IMAGE_TAG} AS builder
 WORKDIR /app
 COPY . .
