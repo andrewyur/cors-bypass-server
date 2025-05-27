@@ -1,0 +1,14 @@
+name: rust-proxy
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - IMAGE_TAG=aarch64-musl
+    ports:
+      - "8080:8080"
+    # environment:
+    #   - RUST_LOG=debug
+    init: true

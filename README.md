@@ -1,3 +1,3 @@
 # cors-bypass-server
 
-Lightweight image for a forward proxy that serves a given domain
+Lightweight image for a performant http forward proxy that adds CORS headers

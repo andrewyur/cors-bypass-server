@@ -1,0 +1,13 @@
+[package]
+name = "cors-bypass-server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+bytes = "1.10.1"
+log = "0.4.27"
+pretty_env_logger = "0.5.0"
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
+tokio = { version = "1.45.1", features = ["full"] }
+warp = "0.3.7"
