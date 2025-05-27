@@ -1,0 +1,13 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '--build-arg', 'TARGETARCH=arm64', 'IMAGE_TAG=x86_64-musl',
+      '-t', 'us-central1-docker.pkg.dev/high-office-431317-a4/cloud-run-source-deploy/cors-bypass-server',
+      '.'
+    ]
+
+    
+
+images:
+  - 'us-central1-docker.pkg.dev/high-office-431317-a4/cloud-run-source-deploy/cors-bypass-server'
