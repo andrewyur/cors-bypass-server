@@ -24,7 +24,7 @@ async fn main() {
 
     let client = reqwest::Client::new();
 
-    if whitelist.len() > 0 {
+    if whitelist.len() == 0 {
         info!("All domains whitelisted")
     } else {
         info!("Whitelisted domains: {:?}", whitelist)
