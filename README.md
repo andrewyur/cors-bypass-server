@@ -10,7 +10,7 @@ meant to be embedded into an application requiring use of an API that doesn't re
 
 ## Configuration
 
-- `PORT` env var: specifies which port to listen on, default is `8080`
+- `CORS_PORT` env var: specifies which port to listen on, default is `9000`
 - `WHITELIST` env var: comma separated list of whitelisted domains, defaults to accepting all domains
   - example: `WHITELIST=example.com,example.net,example.org`
 - `CORS` env var: set if you want the server to add cors headers

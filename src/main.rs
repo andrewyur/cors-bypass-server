@@ -10,8 +10,8 @@ extern crate pretty_env_logger;
 async fn main() {
     pretty_env_logger::init();
 
-    let port: u16 = env::var("PORT")
-        .unwrap_or("8080".to_string())
+    let port: u16 = env::var("CORS_PORT")
+        .unwrap_or("9000".to_string())
         .parse()
         .expect("Invalid PORT value provided");
 
