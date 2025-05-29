@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use warp::Filter;
 use std::collections::HashMap;
 use std::env;
@@ -15,7 +15,20 @@ async fn main() {
         .parse()
         .expect("Invalid PORT value provided");
 
+    let whitelist: Vec<_> = env::var("WHITELIST")
+        .unwrap_or_default()
+        .split(",")
+        .filter(|s| !s.is_empty() )
+        .map(|s| s.to_string())
+        .collect();
+
     let client = reqwest::Client::new();
+
+    if whitelist.len() > 0 {
+        info!("All domains whitelisted")
+    } else {
+        info!("Whitelisted domains: {:?}", whitelist)
+    }
 
     let proxy = warp::path::end()
         .and(warp::filters::query::query::<HashMap<String, String>>())
@@ -24,7 +37,7 @@ async fn main() {
         .and(warp::body::bytes())
         .and_then({
             move |queries, method, headers, body | {
-                do_fetch(client.clone(), queries, method, body, headers)
+                do_fetch(client.clone(), whitelist.clone(), queries, method, body, headers)
             }
         });
 
@@ -33,6 +46,7 @@ async fn main() {
 
 async fn fetch(
     client: reqwest::Client, 
+    whitelist: Vec<String>,
     queries: HashMap<String,String>, 
     method: warp::http::Method,
     body: bytes::Bytes,
@@ -40,18 +54,20 @@ async fn fetch(
 ) 
     -> anyhow::Result<impl warp::Reply>{
 
-    let url = queries.get("url").context("missing url query")?;
+    let url = reqwest::Url::parse(queries.get("url").context("missing url query")?)?;
+    
+    let url_domain = url.domain().context("no domain on given origin")?;
+
+    if whitelist.len() > 0 && whitelist.iter().all(|whitelisted_domain| url_domain != whitelisted_domain) {
+        return anyhow::Result::Err(anyhow!("url did not match any domains on whitelist"));
+    }
 
     let mut request = client.request(method.clone(), url);
 
-    // omit headers involved with CORS
     for (key, value) in headers.iter() {
-        if key != "host" && key != "origin" && key != "referer" {
-            request = request.header(key, value);
-        }
+        request = request.header(key, value);
     }
 
-    // Add body if appropriate
     if matches!(method, reqwest::Method::POST | reqwest::Method::PUT | reqwest::Method::PATCH) {
         request = request.body(body);
     }
@@ -67,21 +83,20 @@ async fn fetch(
         reply = reply.header(key, value);
     }
 
-    reply = reply.header("Access-Control-Allow-Origin", "*");
-
     return Ok(reply.body(body)?)
 }
 
 // need to do this bc rust doesn't support unnamed closures ?
 async fn do_fetch(
     client: reqwest::Client, 
+    whitelist: Vec<String>,
     queries: HashMap<String,String>, 
     method: warp::http::Method,
     body: bytes::Bytes,
     headers: warp::http::HeaderMap
 ) -> Result<impl warp::Reply, warp::reject::Rejection>{
-    fetch(client.clone(), queries, method, body, headers).await.map_err(|err| {
-        warn!("error: {}", err.to_string());
+    fetch(client, whitelist, queries, method, body, headers).await.map_err(|err| {
+        info!("request failed: {}", err.to_string());
         warp::reject()
     })
 }
