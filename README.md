@@ -13,3 +13,4 @@ meant to be embedded into an application requiring use of an API that doesn't re
 - `PORT` env var: specifies which port to listen on, default is `8080`
 - `WHITELIST` env var: comma separated list of whitelisted domains, defaults to accepting all domains
   - example: `WHITELIST=example.com,example.net,example.org`
+- `CORS` env var: set if you want the server to add cors headers

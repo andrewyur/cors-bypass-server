@@ -22,6 +22,8 @@ async fn main() {
         .map(|s| s.to_string())
         .collect();
 
+    let cors = env::var("CORS").is_ok();
+
     let client = reqwest::Client::new();
 
     if whitelist.len() == 0 {
@@ -37,7 +39,7 @@ async fn main() {
         .and(warp::body::bytes())
         .and_then({
             move |queries, method, headers, body | {
-                do_fetch(client.clone(), whitelist.clone(), queries, method, body, headers)
+                do_fetch(client.clone(), whitelist.clone(), cors.clone(), queries, method, body, headers)
             }
         });
 
@@ -47,6 +49,7 @@ async fn main() {
 async fn fetch(
     client: reqwest::Client, 
     whitelist: Vec<String>,
+    cors: bool,
     queries: HashMap<String,String>, 
     method: warp::http::Method,
     body: bytes::Bytes,
@@ -65,13 +68,16 @@ async fn fetch(
     let mut request = client.request(method.clone(), url);
 
     for (key, value) in headers.iter() {
-        request = request.header(key, value);
+        if key != "host" && key != "origin" && key != "referer" {
+            request = request.header(key, value);
+        }
     }
 
     if matches!(method, reqwest::Method::POST | reqwest::Method::PUT | reqwest::Method::PATCH) {
         request = request.body(body);
     }
 
+    info!("{request:?}");
     let response = request.send().await?;
 
     let status = response.status();
@@ -83,6 +89,10 @@ async fn fetch(
         reply = reply.header(key, value);
     }
 
+    if cors {
+        reply = reply.header("Access-Control-Allow-Origin", "*");
+    }
+
     return Ok(reply.body(body)?)
 }
 
@@ -90,12 +100,13 @@ async fn fetch(
 async fn do_fetch(
     client: reqwest::Client, 
     whitelist: Vec<String>,
+    cors: bool,
     queries: HashMap<String,String>, 
     method: warp::http::Method,
     body: bytes::Bytes,
     headers: warp::http::HeaderMap
 ) -> Result<impl warp::Reply, warp::reject::Rejection>{
-    fetch(client, whitelist, queries, method, body, headers).await.map_err(|err| {
+    fetch(client, whitelist, cors, queries, method, body, headers).await.map_err(|err| {
         info!("request failed: {}", err.to_string());
         warp::reject()
     })
